@@ -689,8 +689,9 @@ function drawBeatVisual(ctx, W, H, now, S, pal) {
     } else if (mode === 'ringSpectrum') {
       // The big neon spectrum ring, always at the center of the screen
       const cx = W / 2, cy = H / 2, m = Math.min(W, H);
-      const r0 = m * (0.15 + Beat.pulse * 0.035 + Beat.bass * 0.03);
-      const maxLen = m * 0.17;
+      const ringScale = clamp(S.ringSize || 1, 0.4, 2.5);
+      const r0 = m * (0.15 + Beat.pulse * 0.035 + Beat.bass * 0.03) * ringScale;
+      const maxLen = m * 0.17 * ringScale;
       const nb = bars.length;
       ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -765,13 +766,14 @@ function drawBeatVisual(ctx, W, H, now, S, pal) {
       }
     } else if (mode === 'radial') {
       const count = R.quality ? 64 : 32;
-      const radius = Math.min(W, H) * (0.12 + Beat.pulse * 0.07);
+      const radialScale = clamp(S.radialSize || 1, 0.4, 2.5);
+      const radius = Math.min(W, H) * (0.12 + Beat.pulse * 0.07) * radialScale;
       ctx.lineCap = 'round';
       for (let i = 0; i < count; i++) {
         const value = barValue(Math.floor(i * bars.length / count));
         const angle = i / count * 6.2832;
         const inner = radius;
-        const outer = inner + 4 + value * Math.min(W, H) * 0.09;
+        const outer = inner + 4 + value * Math.min(W, H) * 0.09 * radialScale;
         ctx.strokeStyle = rgba(i % 2 ? pal.a : pal.glow, 0.18 + value * 0.62);
         ctx.lineWidth = Math.max(1, Math.min(4, W / 320));
         ctx.beginPath();
