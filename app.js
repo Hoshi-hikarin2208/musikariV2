@@ -1009,7 +1009,7 @@ function parseYoutubeTrackTitle(raw) {
     const first = cleanTitle(parts[0]);
     if (first && !titleCandidates.includes(first)) titleCandidates.push(first);
   }
-  return { title: title || cleanedFullTitle || raw.trim(), artist, titleCandidates };
+  return { title: title || cleanTitle(raw) || raw.trim(), artist, titleCandidates };
 }
 
 async function fetchLyricsData(track, signal) {
@@ -1831,7 +1831,7 @@ document.addEventListener('visibilitychange', () => {
 const ctx = canvas.getContext('2d', { alpha: false });
 let W = 0, H = 0, DPR = 1;
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, R.quality ? 2 : 1);
+  DPR = Math.min(window.devicePixelRatio || 1, R.quality ? 1.5 : 1);
   W = innerWidth; H = innerHeight;
   canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
