@@ -119,7 +119,7 @@ const DESIGN_ROWS = DESIGN_PRESETS.map(([name, style, pal, bg], index) => {
     cursorFamily: family, cursorName: CURSOR_FAMILIES[family] + ' ' + motif,
   };
 });
-const DEFAULTS = { style: 'constellation', pal: 'gold', bg: 'dust', design: 'custom', mood: 'custom', cursor: 'theme', lyricFont: 'dmSans', linePos: 'bottom', customBgDim: 0.45, beatVisual: ['ringSpectrum', 'beatRipples', 'miniRings', 'shake', 'randomShake', 'bass', 'glitch', 'distortion', 'beatFlash', 'strobePulse', 'pulse'], beatShake: 0.5, beatZoom: false, aggressiveZoom: false, beatRandom: true, beatFlash: false, aggressiveShake: false, aggressiveFlash: false, size: 1, glow: 0.8, motion: 0.8, sens: 1, card: true };
+const DEFAULTS = { style: 'constellation', pal: 'gold', bg: 'dust', design: 'custom', mood: 'custom', cursor: 'theme', lyricFont: 'dmSans', linePos: 'bottom', customBgDim: 0.45, beatVisual: ['ringSpectrum', 'beatRipples', 'miniRings', 'shake', 'randomShake', 'bass', 'glitch', 'distortion', 'beatFlash', 'strobePulse', 'pulse'], beatShake: 0.5, beatZoom: false, aggressiveZoom: false, beatRandom: true, beatFlash: false, aggressiveShake: false, aggressiveFlash: false, size: 1, glow: 0.8, motion: 0.8, sens: 1, ringSize: 1, radialSize: 1, card: true };
 const STYLES = [['constellation', 'Constellation', '✦'], ['karaoke', 'Karaoke', '♪'], ['kinetic', 'Kinetic', '◆'], ['orbit', 'Orbit', '◎'], ['wave', 'Wave', '∿'], ['speakers', 'Speaker stage', '♫']];
 const BGS = [
   ['dust', 'Stardust'],
@@ -222,7 +222,7 @@ function readHash() {
   str('cursor', CURSORS.map((x) => x[0]));
   const beatVisual = q.get('beatVisual');
   if (beatVisual) S.beatVisual = beatVisual.split(',').filter((id) => BEAT_VISUALS.some((item) => item[0] === id));
-  num('size', 0.7, 1.5); num('glow', 0, 1.5); num('motion', 0, 1.5); num('sens', 0.5, 2); num('beatShake', 0, 1.5); num('customBgDim', 0, 0.95);
+  num('size', 0.7, 1.5); num('glow', 0, 1.5); num('motion', 0, 1.5); num('sens', 0.5, 2); num('beatShake', 0, 1.5); num('customBgDim', 0, 0.95); num('ringSize', 0.4, 2.5); num('radialSize', 0.4, 2.5);
   ['beatZoom', 'aggressiveZoom', 'beatRandom', 'beatFlash', 'aggressiveShake', 'aggressiveFlash'].forEach((key) => {
     const value = q.get(key);
     if (value === 'true' || value === 'false') S[key] = value === 'true';
@@ -243,7 +243,7 @@ function validate() {
   if (S.beatVisual.includes('off') && S.beatVisual.length > 1) S.beatVisual = S.beatVisual.filter((id) => id !== 'off');
   if (S.beatVisual.includes('auto') && S.beatVisual.length > 1) S.beatVisual = S.beatVisual.filter((id) => id !== 'auto');
   if (!S.beatVisual.length) S.beatVisual = DEFAULTS.beatVisual.slice();
-  ['size', 'glow', 'motion', 'sens', 'beatShake'].forEach((k) => { if (typeof S[k] !== 'number' || !isFinite(S[k])) S[k] = DEFAULTS[k]; });
+  ['size', 'glow', 'motion', 'sens', 'beatShake', 'ringSize', 'radialSize'].forEach((k) => { if (typeof S[k] !== 'number' || !isFinite(S[k])) S[k] = DEFAULTS[k]; });
 }
 
 /* Custom background persistent storage via IndexedDB with localStorage fallback */
@@ -530,7 +530,7 @@ function releaseLocalAudio() {
 function saveSettings() {
   LS.set('lyr_settings', JSON.stringify(S));
   try {
-    const q = new URLSearchParams({ style: S.style, pal: S.pal, bg: S.bg, design: S.design, mood: S.mood, cursor: S.cursor, lyricFont: S.lyricFont, beatVisual: S.beatVisual.join(','), beatShake: S.beatShake, beatZoom: S.beatZoom, aggressiveZoom: S.aggressiveZoom, beatRandom: S.beatRandom, beatFlash: S.beatFlash, aggressiveShake: S.aggressiveShake, aggressiveFlash: S.aggressiveFlash, size: S.size, glow: S.glow, motion: S.motion, sens: S.sens });
+    const q = new URLSearchParams({ style: S.style, pal: S.pal, bg: S.bg, design: S.design, mood: S.mood, cursor: S.cursor, lyricFont: S.lyricFont, beatVisual: S.beatVisual.join(','), beatShake: S.beatShake, beatZoom: S.beatZoom, aggressiveZoom: S.aggressiveZoom, beatRandom: S.beatRandom, beatFlash: S.beatFlash, aggressiveShake: S.aggressiveShake, aggressiveFlash: S.aggressiveFlash, size: S.size, glow: S.glow, motion: S.motion, sens: S.sens, ringSize: S.ringSize, radialSize: S.radialSize });
     history.replaceState(null, '', '#' + q);
   } catch (e) { /* ignore */ }
 }
@@ -1624,6 +1624,8 @@ function buildPanel() {
   box.append(hint);
   const privacyHint = el('p', 'hint', 'MP3 beat sync starts automatically where supported. Spotify and YouTube need you to choose what audio to share because browsers protect other apps’ sound.');
   box.append(privacyHint);
+  slider(box, 'ringSize', 'Neon ring size', 0.4, 2.5, 0.05, () => S.ringSize, (v) => setS('ringSize', v), (v) => Math.round(v * 100) + '%');
+  slider(box, 'radialSize', 'Radial spectrum size', 0.4, 2.5, 0.05, () => S.radialSize, (v) => setS('radialSize', v), (v) => Math.round(v * 100) + '%');
   slider(box, 'sens', 'Beat sensitivity · bass + full mix', 0.5, 2, 0.05, () => S.sens, (v) => setS('sens', v), (v) => v.toFixed(2) + '×');
   syncToggles.push(toggle(box, 'Random beat size · small to big', () => S.beatRandom, (v) => setS('beatRandom', v)));
   slider(box, 'beatShake', 'Beat shake', 0, 1.5, 0.05, () => S.beatShake, (v) => setS('beatShake', v), (v) => Math.round(v * 100) + '%');
