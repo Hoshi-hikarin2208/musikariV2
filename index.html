@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Constellation Lyrics</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dela+Gothic+One&family=DM+Sans:wght@400;500;600;700;800&family=DotGothic16&family=Manrope:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=Orbitron:wght@600;800;900&family=Oswald:wght@400;500;600;700&family=Righteous&family=Sawarabi+Mincho&family=Syne:wght@700;800&family=Zen+Tokyo+Zoo&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud">
+    <div id="np" hidden>
+      <img id="art" alt="">
+      <div class="meta">
+        <div id="title"></div>
+        <div id="artist"></div>
+      </div>
+    </div>
+    <div id="btns">
+      <span id="beatdot" title="Beat indicator"></span>
+      <button id="cust" aria-expanded="false" aria-controls="panel">Customize</button>
+      <button id="fs" title="Fullscreen (F)">Fullscreen</button>
+    </div>
+  </div>
+
+  <section id="youtube-shell" aria-label="YouTube player" hidden>
+    <div id="youtube-player"></div>
+    <div id="youtube-fallback" class="youtube-fallback" role="status" hidden>
+      <span class="youtube-fallback-icon" aria-hidden="true">▶</span>
+      <strong>Video unavailable here</strong>
+      <p>This video may block embedded playback. Open it on YouTube or try another video.</p>
+    </div>
+    <div class="youtube-actions">
+      <button id="youtube-sync-beat" type="button">Sync beat to this music</button>
+      <a id="youtube-external" class="youtube-external" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+    </div>
+    <button id="youtube-close" type="button">Close video</button>
+  </section>
+
+  <aside id="panel" aria-label="Customize" aria-hidden="true">
+    <div class="ph"><b>Customize</b><button id="pclose" aria-label="Close">&#x2715;</button></div>
+    <div id="pbody"></div>
+  </aside>
+
+  <div id="status" role="status"></div>
+
+  <div id="gate">
+    <div class="card">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 C16 12 20 16 30 16 C20 16 16 20 16 30 C16 20 12 16 2 16 C12 16 16 12 16 2Z"/></svg>
+      <h1>Constellation Lyrics</h1>
+      <p class="sub">Every word of your song lights up, in time with the beat.</p>
+
+      <p class="sub">Choose one simple way to start listening.</p>
+      <div class="source-options">
+        <section class="source-card spotify-card" aria-labelledby="spotify-heading">
+          <div class="source-icon" aria-hidden="true">♫</div>
+          <div class="source-copy">
+            <h2 id="spotify-heading"><span class="source-step">1</span> Use Spotify</h2>
+            <p>Connect once, then play music in Spotify as usual.</p>
+          </div>
+          <button id="connect" class="primary source-button" type="button">Connect Spotify</button>
+          <p class="source-help">Safe, read-only access. We cannot change your music.</p>
+          <div class="spotify-redirect-help">
+            <p class="source-help"><b>If Spotify says “redirect_uri not matching”</b>, add this exact address to your Spotify app’s Redirect URIs:</p>
+            <div class="spotify-redirect-row"><code id="spotify-redirect" aria-label="Required Spotify redirect URI"></code><button id="copy-spotify-redirect" type="button">Copy</button></div>
+          </div>
+        </section>
+        <section class="source-card youtube-card" aria-labelledby="youtube-heading">
+          <div class="source-icon" aria-hidden="true">▶</div>
+          <div class="source-copy">
+            <h2 id="youtube-heading"><span class="source-step">2</span> Use YouTube</h2>
+            <p>Type a song name, or paste a YouTube link.</p>
+          </div>
+          <form id="youtube-form">
+            <label for="youtube-url">Song name or YouTube link</label>
+            <div class="youtube-input-row">
+              <input id="youtube-url" type="text" inputmode="search" autocomplete="off" placeholder="Example: Here Comes the Sun" aria-label="Song name or YouTube link">
+              <button id="youtube-connect" type="submit">Find / Play</button>
+            </div>
+          </form>
+          <p class="source-help">For a song name, choose a video on YouTube, copy its link, and paste it here to play. For real beat sync, open Customize → Beat sync and share this tab’s audio.</p>
+        </section>
+        <section class="source-card mp3-card" aria-labelledby="mp3-heading">
+          <div class="source-icon" aria-hidden="true">♫</div>
+          <div class="source-copy">
+            <h2 id="mp3-heading"><span class="source-step">3</span> Play your MP3s</h2>
+            <p>Add songs from your device and keep them saved in this browser.</p>
+          </div>
+          <button id="choose-mp3" class="primary source-button" type="button">Choose MP3 files</button>
+          <p class="source-help">Private to this browser. You can play saved songs again anytime.</p>
+          <div id="mp3-gate-library" class="mp3-library" aria-label="Saved MP3 songs"></div>
+        </section>
+      </div>
+      <button id="demo" class="demo-link" type="button">Try a sample without connecting</button>
+
+      <div id="setup" hidden>
+        <p><b>One-time setup:</b> this app needs a free Spotify Client ID.</p>
+        <ol>
+          <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> and create an app.</li>
+          <li>Add this exact Redirect URI:
+            <code id="redir"></code>
+          </li>
+          <li>Paste the Client ID into <code>config.js</code> and reload.</li>
+        </ol>
+      </div>
+
+      <p class="fine">Your music accounts stay yours. Disconnect Spotify any time in Customize.</p>
+    </div>
+  </div>
+
+  <input id="mp3-files" type="file" accept=".mp3,audio/mpeg" multiple hidden>
+  <input id="custom-bg-input" type="file" accept="image/*,.gif,.png,.jpg,.jpeg,.webp,.svg,.avif" hidden>
+  <img id="custom-bg-dom" style="display:none;" aria-hidden="true" alt="">
+  <section id="local-player" aria-label="Local MP3 player" hidden>
+    <div class="local-player-heading">
+      <strong id="local-player-title">Local MP3</strong>
+      <button id="local-player-close" type="button" aria-label="Close MP3 player">Close</button>
+    </div>
+    <audio id="local-audio" controls preload="metadata"></audio>
+  </section>
+
+  <script src="config.js"></script>
+  <script src="themes.js"></script>
+  <script src="beat.js"></script>
+  <script src="render.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
