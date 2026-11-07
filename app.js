@@ -109,7 +109,7 @@ const DESIGN_PRESETS = [
   ['Polar Borealis Stars', 'constellation', 'ice', 'northernLights'],
 ];
 const CURSOR_MOTIFS = ['starlight', 'petals', 'comet', 'diamond', 'leaf', 'orbit', 'music note', 'bloom', 'firefly', 'ripple', 'snowflake', 'heart'];
-const CURSOR_FAMILIES = ['star', 'song', 'prism', 'orbit', 'tide'];
+const CURSOR_FAMILIES = ['star', 'song', 'prism', 'orbit', 'tide', 'tokyo'];
 const DESIGN_ROWS = DESIGN_PRESETS.map(([name, style, pal, bg], index) => {
   const family = Math.floor(index / CURSOR_MOTIFS.length);
   const motif = CURSOR_MOTIFS[index % CURSOR_MOTIFS.length];
@@ -1839,6 +1839,7 @@ function resize() {
 addEventListener('resize', resize);
 resize();
 
+let lastRenderError = '';
 let lastNow = 0, slowFor = 0, fastFor = 0, beatSeen = 0, meterT = 0;
 function frame(now) {
   frameId = 0;
@@ -1872,7 +1873,20 @@ function frame(now) {
     else if (!state.lines.length) fs.message = state.lyricsStatus;
     else { fs.lines = state.lines; fs.t = (currentPos() + state.offsetMs) / 1000; }
   }
-  R.render(ctx, W, H, now, dt, fs, S);
+  try {
+    R.render(ctx, W, H, now, dt, fs, S);
+  } catch (err) {
+    // Never leave a silent black screen: reset the canvas and show the real error.
+    try { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; } catch (e2) { /* ignore */ }
+    const msg = 'Render error: ' + (err && err.message ? err.message : err);
+    if (msg !== lastRenderError) {
+      lastRenderError = msg;
+      console.error(err);
+      flashStatus(msg + ' (open the browser console, F12, for details)', 0);
+    }
+    ctx.fillStyle = '#05070c';
+    ctx.fillRect(0, 0, W, H);
+  }
 }
 
 /* ------------------------------------------------------------------ *
