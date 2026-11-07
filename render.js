@@ -32,6 +32,9 @@ const R = {
   cursorParticles: [],
   phonkKanjis: [],
   driftStreaks: [],
+  bassHits: [],
+  jolts: [],
+  fxHits: [],
   customBgImg: null,
   setCustomBg(src) {
     if (!src) {
@@ -387,7 +390,37 @@ function drawBg(ctx, W, H, now, S, pal) {
   if (S.bg !== 'dust' && S.bg !== 'spectrum' && S.bg !== 'aurora') drawDust(ctx, W, H, now, pal, 0.12 * bass);
 }
 
+/* Glowing radial spectrum ring (the neon circular equalizer). valueAt(t) returns 0..1 for t in 0..1 around the circle. */
+function spectrumRing(ctx, cx, cy, r0, maxLen, count, valueAt, colBar, colGlow, alpha, rot, width) {
+  const step = 6.2832 / count;
+  const glow = R.quality ? 14 : 0;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let i = 0; i < count; i++) {
+    const a = rot + i * step;
+    const len = 2 + valueAt(i / count) * maxLen;
+    const c = Math.cos(a), s = Math.sin(a);
+    ctx.moveTo(cx + c * r0, cy + s * r0);
+    ctx.lineTo(cx + c * (r0 + len), cy + s * (r0 + len));
+  }
+  ctx.strokeStyle = rgba(colBar, 0.85 * alpha);
+  ctx.lineWidth = width;
+  ctx.shadowColor = rgba(colGlow, 0.95 * alpha);
+  ctx.shadowBlur = glow;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r0, 0, 6.2832);
+  ctx.strokeStyle = rgba(colGlow, 0.9 * alpha);
+  ctx.lineWidth = width * 1.5;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = `rgba(255,255,255,${0.6 * alpha})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
 function drawBeatVisual(ctx, W, H, now, S, pal) {
+  for (let i = R.fxHits.length - 1; i >= 0; i--) if (now - R.fxHits[i].born >= R.fxHits[i].life) R.fxHits.splice(i, 1);
   const selected = Array.isArray(S.beatVisual) ? S.beatVisual : [S.beatVisual || 'waveform'];
   if (selected.includes('off')) return;
   const modes = selected.includes('auto')
@@ -632,13 +665,103 @@ function drawBeatVisual(ctx, W, H, now, S, pal) {
       ctx.fill();
       ctx.shadowBlur = 0;
     } else if (mode === 'bass') {
-      const energy = clamp(Beat.bass * 0.8 + Beat.pulse * 0.75);
-      const radius = Math.min(W, H) * (0.07 + energy * 0.1);
-      ctx.lineWidth = 2 + energy * 4;
-      for (let side = -1; side <= 1; side += 2) {
-        const x = W / 2 + side * Math.min(W * 0.24, 220);
-        ctx.strokeStyle = rgba(side < 0 ? pal.a : pal.b, 0.12 + energy * 0.4);
-        ctx.beginPath(); ctx.arc(x, H / 2, radius, 0, 6.2832); ctx.stroke();
+      // Bass thump: shockwaves that land at random spots all over the screen on each beat
+      for (let i = R.bassHits.length - 1; i >= 0; i--) {
+        const h = R.bassHits[i];
+        const prog = (now - h.born) / h.life;
+        if (prog >= 1) { R.bassHits.splice(i, 1); continue; }
+        const fade = 1 - prog;
+        const grow = easeOut(prog);
+        const core = h.size * (0.35 + grow * 0.55);
+        const glow = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, core * 1.6);
+        glow.addColorStop(0, rgba(h.col, 0.42 * fade * h.power));
+        glow.addColorStop(0.5, rgba(h.col, 0.14 * fade * h.power));
+        glow.addColorStop(1, rgba(h.col, 0));
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(h.x, h.y, core * 1.6, 0, 6.2832); ctx.fill();
+        ctx.strokeStyle = rgba(h.col, 0.8 * fade);
+        ctx.lineWidth = 1.5 + fade * 5 * h.power;
+        ctx.beginPath(); ctx.arc(h.x, h.y, h.size * (0.25 + grow * 1.5), 0, 6.2832); ctx.stroke();
+        ctx.strokeStyle = `rgba(255,255,255,${0.55 * fade})`;
+        ctx.lineWidth = 1 + fade * 1.5;
+        ctx.beginPath(); ctx.arc(h.x, h.y, h.size * (0.1 + grow * 0.9), 0, 6.2832); ctx.stroke();
+      }
+    } else if (mode === 'ringSpectrum') {
+      // The big neon spectrum ring, always at the center of the screen
+      const cx = W / 2, cy = H / 2, m = Math.min(W, H);
+      const r0 = m * (0.15 + Beat.pulse * 0.035 + Beat.bass * 0.03);
+      const maxLen = m * 0.17;
+      const nb = bars.length;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath(); ctx.arc(cx, cy, r0 * 0.97, 0, 6.2832); ctx.fill();
+      ctx.globalCompositeOperation = 'lighter';
+      spectrumRing(ctx, cx, cy, r0, maxLen, R.quality ? 140 : 80, (t) => {
+        const u = t < 0.5 ? t * 2 : (1 - t) * 2;
+        const idx = Math.min(nb - 1, Math.floor(u * nb * 0.8));
+        const spike = 0.7 + 0.3 * Math.abs(Math.sin(t * 95 + now * 0.004));
+        return clamp((barValue(idx) * 1.15 + Beat.pulse * 0.3) * spike);
+      }, pal.a, pal.glow, 1, now * 0.00012, Math.max(1.4, Math.min(3, W / 520)));
+    } else if (mode === 'beatRipples') {
+      for (const h of R.fxHits) {
+        if (h.type !== 'beatRipples') continue;
+        const prog = (now - h.born) / h.life;
+        for (let k = 0; k < 3; k++) {
+          const q = (prog - k * 0.16) / 0.68;
+          if (q <= 0 || q >= 1) continue;
+          ctx.strokeStyle = rgba(k % 2 ? pal.a : h.col, (1 - q) * 0.85);
+          ctx.lineWidth = 1 + (1 - q) * 4 * h.power;
+          ctx.shadowColor = rgba(h.col, 0.8 * (1 - q));
+          ctx.shadowBlur = R.quality ? 10 : 0;
+          ctx.beginPath(); ctx.arc(h.x, h.y, h.size * (0.2 + easeOut(q) * 1.8), 0, 6.2832); ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+      }
+    } else if (mode === 'sparkBurst') {
+      for (const h of R.fxHits) {
+        if (h.type !== 'sparkBurst') continue;
+        const prog = (now - h.born) / h.life, fade = 1 - prog;
+        const inner = easeOut(prog) * h.size * 0.9;
+        ctx.beginPath();
+        for (let i = 0; i < 18; i++) {
+          const a = h.rot + i * (6.2832 / 18);
+          const len = h.size * (0.35 + (i % 3) * 0.22) * (1 - prog * 0.5);
+          ctx.moveTo(h.x + Math.cos(a) * inner, h.y + Math.sin(a) * inner);
+          ctx.lineTo(h.x + Math.cos(a) * (inner + len), h.y + Math.sin(a) * (inner + len));
+        }
+        ctx.strokeStyle = rgba(h.col, 0.9 * fade);
+        ctx.lineWidth = 1.2 + fade * 2.2 * h.power;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = rgba(h.col, 0.9 * fade);
+        ctx.shadowBlur = R.quality ? 10 : 0;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    } else if (mode === 'miniRings') {
+      for (const h of R.fxHits) {
+        if (h.type !== 'miniRings') continue;
+        const prog = (now - h.born) / h.life, fade = 1 - prog, age = now - h.born;
+        spectrumRing(ctx, h.x, h.y, h.size * (0.5 + easeOut(prog) * 0.45), h.size * 0.55 * (1 - prog * 0.4), R.quality ? 56 : 32,
+          (t) => 0.2 + 0.8 * Math.abs(Math.sin(h.seed + t * 38 + age * 0.011)) * (0.5 + 0.5 * Math.abs(Math.sin(t * 7 + h.seed))),
+          h.col, pal.glow, fade * h.power, h.rot + age * 0.0005, 1.5);
+      }
+    } else if (mode === 'diamondPop') {
+      for (const h of R.fxHits) {
+        if (h.type !== 'diamondPop') continue;
+        const prog = (now - h.born) / h.life, fade = 1 - prog;
+        const s = h.size * (0.3 + easeOut(prog) * 1.2);
+        ctx.save();
+        ctx.translate(h.x, h.y);
+        ctx.strokeStyle = rgba(h.col, 0.9 * fade);
+        ctx.lineWidth = 1.5 + fade * 3 * h.power;
+        ctx.shadowColor = rgba(h.col, 0.85 * fade);
+        ctx.shadowBlur = R.quality ? 10 : 0;
+        ctx.rotate(h.rot + prog * 1.3);
+        ctx.strokeRect(-s / 2, -s / 2, s, s);
+        ctx.rotate(-prog * 2.6);
+        ctx.strokeStyle = rgba(pal.a, 0.7 * fade);
+        ctx.strokeRect(-s / 4, -s / 4, s / 2, s / 2);
+        ctx.restore();
       }
     } else if (mode === 'radial') {
       const count = R.quality ? 64 : 32;
@@ -1641,6 +1764,62 @@ R.render = function (ctx, W, H, now, dt, fs, S) {
       }
       if (R.driftStreaks.length > 20) R.driftStreaks.splice(0, R.driftStreaks.length - 20);
     }
+
+    // Bass thump: 1-3 shockwaves at random places across the whole screen
+    if (visuals.includes('bass') && (Beat.pulse > 0.15 || Beat.bass > 0.3)) {
+      const hits = 1 + (Beat.pulse > 0.6 ? 1 : 0) + (Beat.bass > 0.4 ? 1 : 0);
+      for (let n = 0; n < hits; n++) {
+        const r = Math.random();
+        R.bassHits.push({
+          x: Math.random() * W, y: Math.random() * H, born: now,
+          life: 520 + Math.random() * 380,
+          size: Math.min(W, H) * (0.08 + Math.random() * 0.16) * (0.7 + Beat.pulse * 0.6),
+          power: clamp(0.5 + Beat.pulse * 0.6 + Beat.bass * 0.4),
+          col: r < 0.5 ? pal.glow : r < 0.8 ? pal.a : pal.b,
+        });
+      }
+      if (R.bassHits.length > 16) R.bassHits.splice(0, R.bassHits.length - 16);
+    }
+
+    // Random screen shake: patches of the screen jolt at random places on each beat
+    if (visuals.includes('randomShake') && !REDUCED_MOTION && (Beat.pulse > 0.15 || Beat.bass > 0.3)) {
+      const patches = 2 + Math.floor(Math.random() * 3) + (Beat.pulse > 0.7 ? 1 : 0);
+      const power = (S.beatShake !== undefined ? S.beatShake : 0.5) * (S.aggressiveShake ? 1.8 : 1);
+      for (let n = 0; n < patches; n++) {
+        const w = W * (0.16 + Math.random() * 0.34), h = H * (0.14 + Math.random() * 0.32);
+        R.jolts.push({
+          x: Math.random() * (W - w), y: Math.random() * (H - h), w, h, born: now,
+          life: 170 + Math.random() * 190,
+          amp: (14 + Beat.pulse * 34 + Beat.bass * 20) * Math.max(0.25, power),
+          col: Math.random() < 0.5 ? pal.glow : pal.b,
+        });
+      }
+      if (R.jolts.length > 18) R.jolts.splice(0, R.jolts.length - 18);
+    }
+
+    // Random-place beat effects: ripples, spark bursts, mini spectrum rings, diamond pops
+    if (Beat.pulse > 0.15 || Beat.bass > 0.3) {
+      const spawn = (type, count, lifeMin, lifeSpan, sizeMin, sizeSpan) => {
+        if (!visuals.includes(type)) return;
+        for (let n = 0; n < count; n++) {
+          const r = Math.random();
+          R.fxHits.push({
+            type, x: Math.random() * W, y: Math.random() * H, born: now,
+            life: lifeMin + Math.random() * lifeSpan,
+            size: Math.min(W, H) * (sizeMin + Math.random() * sizeSpan) * (0.7 + Beat.pulse * 0.6),
+            power: clamp(0.5 + Beat.pulse * 0.6 + Beat.bass * 0.3),
+            col: r < 0.45 ? pal.glow : r < 0.75 ? pal.a : pal.b,
+            rot: Math.random() * 6.2832, seed: Math.random() * 100,
+          });
+        }
+      };
+      const strong = Beat.pulse > 0.65 ? 1 : 0;
+      spawn('beatRipples', 1 + strong, 800, 400, 0.05, 0.08);
+      spawn('sparkBurst', 1 + strong, 450, 300, 0.07, 0.1);
+      spawn('miniRings', 1 + strong, 650, 350, 0.06, 0.07);
+      spawn('diamondPop', 1 + strong, 500, 300, 0.06, 0.09);
+      if (R.fxHits.length > 40) R.fxHits.splice(0, R.fxHits.length - 40);
+    }
   }
   R.zoomPulse *= Math.exp(-dt / 300);
   R.blackPulse *= Math.exp(-dt / 100);
@@ -1731,6 +1910,28 @@ R.render = function (ctx, W, H, now, dt, fs, S) {
     vig.addColorStop(1, rgba(pal.glow, strength * 1.4));
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, W, H);
+  }
+
+  // Random screen shake patches: re-draw random regions of the finished frame, jolted sideways
+  if (R.jolts.length) {
+    const sc = ctx.canvas.width / W;
+    for (let i = R.jolts.length - 1; i >= 0; i--) {
+      const j = R.jolts[i];
+      const prog = (now - j.born) / j.life;
+      if (prog >= 1 || REDUCED_MOTION) { R.jolts.splice(i, 1); continue; }
+      const fade = 1 - prog;
+      const dx = (Math.random() - 0.5) * 2 * j.amp * fade;
+      const dy = (Math.random() - 0.5) * 1.2 * j.amp * fade;
+      const sx = clamp(j.x - dx, 0, W - j.w), sy = clamp(j.y - dy, 0, H - j.h);
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath(); ctx.rect(j.x, j.y, j.w, j.h); ctx.clip();
+      ctx.drawImage(ctx.canvas, sx * sc, sy * sc, j.w * sc, j.h * sc, j.x, j.y, j.w, j.h);
+      ctx.restore();
+      ctx.strokeStyle = rgba(j.col, 0.35 * fade);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(j.x + dx * 0.5, j.y + dy * 0.5, j.w, j.h);
+    }
   }
 
   // Glitch Effect (canvas slice displacement + digital block glitch)
