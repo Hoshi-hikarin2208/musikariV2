@@ -119,7 +119,7 @@ const DESIGN_ROWS = DESIGN_PRESETS.map(([name, style, pal, bg], index) => {
     cursorFamily: family, cursorName: CURSOR_FAMILIES[family] + ' ' + motif,
   };
 });
-const DEFAULTS = { style: 'constellation', pal: 'gold', bg: 'dust', design: 'custom', mood: 'custom', cursor: 'theme', lyricFont: 'dmSans', linePos: 'bottom', customBgDim: 0.45, beatVisual: ['waveLine', 'signal', 'shake', 'glitch', 'distortion', 'beatFlash', 'strobePulse', 'pulse'], beatShake: 0.5, beatZoom: false, aggressiveZoom: false, beatRandom: true, beatFlash: false, aggressiveShake: false, aggressiveFlash: false, size: 1, glow: 0.8, motion: 0.8, sens: 1, card: true };
+const DEFAULTS = { style: 'constellation', pal: 'gold', bg: 'dust', design: 'custom', mood: 'custom', cursor: 'theme', lyricFont: 'dmSans', linePos: 'bottom', customBgDim: 0.45, beatVisual: ['ringSpectrum', 'beatRipples', 'miniRings', 'shake', 'randomShake', 'bass', 'glitch', 'distortion', 'beatFlash', 'strobePulse', 'pulse'], beatShake: 0.5, beatZoom: false, aggressiveZoom: false, beatRandom: true, beatFlash: false, aggressiveShake: false, aggressiveFlash: false, size: 1, glow: 0.8, motion: 0.8, sens: 1, card: true };
 const STYLES = [['constellation', 'Constellation', '✦'], ['karaoke', 'Karaoke', '♪'], ['kinetic', 'Kinetic', '◆'], ['orbit', 'Orbit', '◎'], ['wave', 'Wave', '∿'], ['speakers', 'Speaker stage', '♫']];
 const BGS = [
   ['dust', 'Stardust'],
@@ -163,7 +163,13 @@ const BEAT_VISUALS = [
   ['beatFlash', 'Beat flash lights', '✦'],
   ['blackFlicker', 'Black beat flicker', '◼'],
   ['pulse', 'Random beat burst', '◉'],
-  ['bass', 'Bass thump', '◉'],
+  ['bass', 'Bass thump (random places)', '◉'],
+  ['randomShake', 'Random screen shake (everywhere)', '↯'],
+  ['ringSpectrum', 'Neon ring spectrum (center)', '◎'],
+  ['beatRipples', 'Beat ripples (random places)', '≋'],
+  ['sparkBurst', 'Spark bursts (random places)', '✴'],
+  ['miniRings', 'Mini spectrum rings (random places)', '✺'],
+  ['diamondPop', 'Diamond pops (random places)', '◇'],
   ['bars', 'Equalizer bars', '▥'],
   ['radial', 'Radial spectrum', '✺'],
   ['darkness', 'Darkness pulse', '◐'],
@@ -190,8 +196,8 @@ const MOODS = [
   ['electric', 'Electric', 'kinetic', 'neon', 'spectrum', 'sparks'],
   ['sunset', 'Warm sunset', 'orbit', 'ember', 'rings', 'smoke + embers'],
   ['minimal', 'Minimal', 'wave', 'mono', 'none', 'dust'],
-  ['phonk', 'Phonk', 'kinetic', 'ember', 'none', 'sparks', ['signal', 'driftStreaks', 'shake', 'glitch', 'distortion', 'blackFlicker', 'beatFlash', 'strobePulse', 'pulse']],
-  ['japanesePhonk', 'Japanese Phonk', 'kinetic', 'tokyo', 'japanese', 'sakura', ['waveLine', 'signal', 'phonkKanji', 'driftStreaks', 'shake', 'glitch', 'distortion', 'beatFlash', 'strobePulse', 'pulse']],
+  ['phonk', 'Phonk', 'kinetic', 'ember', 'none', 'sparks', ['signal', 'driftStreaks', 'shake', 'randomShake', 'bass', 'glitch', 'distortion', 'blackFlicker', 'beatFlash', 'strobePulse', 'pulse']],
+  ['japanesePhonk', 'Japanese Phonk', 'kinetic', 'tokyo', 'japanese', 'sakura', ['waveLine', 'signal', 'phonkKanji', 'driftStreaks', 'shake', 'randomShake', 'bass', 'glitch', 'distortion', 'beatFlash', 'strobePulse', 'pulse']],
 ];
 
 const S = Object.assign({}, DEFAULTS);
