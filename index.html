@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dela+Gothic+One&family=DM+Sans:wght@400;500;600;700;800&family=DotGothic16&family=Manrope:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=Orbitron:wght@600;800;900&family=Oswald:wght@400;500;600;700&family=Righteous&family=Sawarabi+Mincho&family=Syne:wght@700;800&family=Zen+Tokyo+Zoo&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <canvas id="c"></canvas>
- 
+
   <div id="hud">
     <div id="np" hidden>
       <img id="art" alt="">
@@ -30,7 +30,7 @@
       <button id="fs" title="Fullscreen (F)">Fullscreen</button>
     </div>
   </div>
- 
+
   <section id="youtube-shell" aria-label="YouTube player" hidden>
     <div id="youtube-player"></div>
     <div id="youtube-fallback" class="youtube-fallback" role="status" hidden>
@@ -44,20 +44,20 @@
     </div>
     <button id="youtube-close" type="button">Close video</button>
   </section>
- 
+
   <aside id="panel" aria-label="Customize" aria-hidden="true">
     <div class="ph"><b>Customize</b><button id="pclose" aria-label="Close">&#x2715;</button></div>
     <div id="pbody"></div>
   </aside>
- 
+
   <div id="status" role="status"></div>
- 
+
   <div id="gate">
     <div class="card">
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 C16 12 20 16 30 16 C20 16 16 20 16 30 C16 20 12 16 2 16 C12 16 16 12 16 2Z"/></svg>
       <h1>Constellation Lyrics</h1>
       <p class="sub">Every word of your song lights up, in time with the beat.</p>
- 
+
       <p class="sub">Choose one simple way to start listening.</p>
       <div class="source-options">
         <section class="source-card spotify-card" aria-labelledby="spotify-heading">
@@ -100,7 +100,7 @@
         </section>
       </div>
       <button id="demo" class="demo-link" type="button">Try a sample without connecting</button>
- 
+
       <div id="setup" hidden>
         <p><b>One-time setup:</b> this app needs a free Spotify Client ID.</p>
         <ol>
@@ -111,11 +111,11 @@
           <li>Paste the Client ID into <code>config.js</code> and reload.</li>
         </ol>
       </div>
- 
+
       <p class="fine">Your music accounts stay yours. Disconnect Spotify any time in Customize.</p>
     </div>
   </div>
- 
+
   <input id="mp3-files" type="file" accept=".mp3,audio/mpeg" multiple hidden>
   <input id="custom-bg-input" type="file" accept="image/*,.gif,.png,.jpg,.jpeg,.webp,.svg,.avif" hidden>
   <img id="custom-bg-dom" style="display:none;" aria-hidden="true" alt="">
@@ -126,12 +126,11 @@
     </div>
     <audio id="local-audio" controls preload="metadata"></audio>
   </section>
- 
-  <script src="config.js?v=2"></script>
-  <script src="themes.js?v=2"></script>
-  <script src="beat.js?v=2"></script>
-  <script src="render.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+
+  <script src="config.js?v=3"></script>
+  <script src="themes.js?v=3"></script>
+  <script src="beat.js?v=3"></script>
+  <script src="render.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
- 
