@@ -1170,7 +1170,7 @@ function cursorEffectFor(S) {
 
 function addCursorParticles(effect, x, y, design) {
   if (design) {
-    const count = R.quality ? [2, 2, 3, 2, 2][design.cursorFamily] : 1;
+    const count = R.quality ? ([2, 2, 3, 2, 2][design.cursorFamily] || 2) : 1;
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * 6.2832;
       const speed = 10 + Math.random() * (design.cursorFamily === 2 ? 40 : 14);
