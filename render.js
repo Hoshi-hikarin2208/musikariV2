@@ -1589,6 +1589,7 @@ const STYLES = { constellation, karaoke, kinetic, orbit, wave, speakers };
 R.render = function (ctx, W, H, now, dt, fs, S) {
   selectedFont = FONTS[S.lyricFont] || FONTS.dmSans;
   const pal = Pal.cur;
+  const visuals = Array.isArray(S.beatVisual) ? S.beatVisual : [S.beatVisual || 'waveform'];
   const p = R.pointer;
   const k = 1 - Math.exp(-dt / 55);
   p.sx += (p.x - p.sx) * k;
@@ -1740,7 +1741,8 @@ R.render = function (ctx, W, H, now, dt, fs, S) {
       const sy = Math.random() * H;
       const sh = 4 + Math.random() * 24;
       const offset = (Math.random() - 0.5) * (18 + intensity * 36);
-      ctx.drawImage(ctx.canvas, 0, sy, W, sh, offset, sy, W, sh);
+      const sc = ctx.canvas.width / W;
+      ctx.drawImage(ctx.canvas, 0, sy * sc, ctx.canvas.width, sh * sc, offset, sy, W, sh);
     }
     if (Math.random() < 0.4 * intensity) {
       ctx.fillStyle = Math.random() < 0.5 ? 'rgba(255, 30, 90, 0.45)' : 'rgba(0, 240, 255, 0.45)';
